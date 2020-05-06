@@ -1,0 +1,309 @@
+#All analyses performed using RStudio Version 1.1.463
+
+*--------------------------------------------------------------------------
+DATASETS and CODEBOOKS
+--------------------------------------------------------------------------*/
+#Country-specific datasets were downloaded from the DHS Program: https://dhsprogram.com/data/available-datasets.cfm
+#Kenya - Dataset: KEKR72FL.DTA // Codebook: KEKR72FL.MAP
+#Bangladesh - Dataset: BDKR61FL.DTA // Codebook: BDKR61FL.MAP
+#India - Dataset: IAKR74FL.DTA // Codebook: IAKR74FL.MAP
+#Peru - Dataset: PEKR6IFL.DTA // Codebook: PEKR6IFL.MAP
+
+*--------------------------------------------------------------------------
+PACKAGES
+--------------------------------------------------------------------------*/
+library(foreign)
+library(summarytools)
+library(tidyverse)
+
+*--------------------------------------------------------------------------
+ANALYSES - Kenya Phase 7
+--------------------------------------------------------------------------*/
+#Read dataset
+dta <- read.dta("KEKR72FL.DTA", convert.factors = FALSE)
+
+#Keep alive children only
+#Create a new variable that is truly unique per respondent by merging case id and MIDX
+dta<- dta %>% filter(b5==1) %>% unite("UniqueID",c(caseid,midx), remove=FALSE)
+
+#Only children with recent diarrhea and fever/cough were asked about antibiotics
+#Confirm questions H15 and H15B are asked to children with diarrhea in past 2 weeks(H11 = 1 or H11 = 2)
+check <- dta %>% mutate(Diarrhea_ABuse=ifelse((h15==1 | h15b ==1),1,0))
+  %>% mutate(diarrhea=ifelse((h11==1 | h11 ==2),1,0))
+ctable(check$diarrhea,check$Diarrhea_ABuse)
+
+---------- ---------------- -------------- ------------- ---------------- ----------------
+             Diarrhea_ABuse              0             1             <NA>            Total
+  diarrhea
+         0                       0 ( 0.0%)     0 ( 0.0%)   17116 (100.0%)   17116 (100.0%)
+         1                    2460 (83.3%)   482 (16.3%)      11 (  0.4%)    2953 (100.0%)
+      <NA>                       0 ( 0.0%)     0 ( 0.0%)      24 (100.0%)      24 (100.0%)
+     Total                    2460 (12.2%)   482 ( 2.4%)   17151 ( 85.4%)   20093 (100.0%)
+---------- ---------------- -------------- ------------- ---------------- ----------------
+
+#Confirm questions H37I, H37J, H37P are asked to children with fever (H22=1) or cough in past two weeks (H31=2)
+#Note: H37P is country-specific variable that gauges use of co-trimoxazole for fever/cough
+check <- dta %>% mutate(resp_ABuse=ifelse((h37i==1 | h37j ==1 | h37p ==1),1,0))
+  %>% mutate(fever_cough=ifelse((h22==1 | h31 ==2),1,0))
+ctable(check$fever_cough,check$resp_ABuse)
+
+------------- ------------ -------------- -------------- ---------------- ----------------
+                resp_ABuse              0              1             <NA>            Total
+  fever_cough
+            0                   0 ( 0.0%)      0 ( 0.0%)   11370 (100.0%)   11370 (100.0%)
+            1                4535 (52.2%)   4035 (46.5%)     115 (  1.3%)    8685 (100.0%)
+         <NA>                   0 ( 0.0%)      0 ( 0.0%)      38 (100.0%)      38 (100.0%)
+        Total                4535 (22.6%)   4035 (20.1%)   11523 ( 57.3%)   20093 (100.0%)
+------------- ------------ -------------- -------------- ---------------- ----------------
+
+#Proceed with analysis
+#How many children had diarrhea OR respiratory problems in past two weeks?
+ill <- dta %>% filter(h11 == 1 | h11 == 2 | h22==1 | h31 ==2)
+
+#Of these ill children, how many took antibiotics?
+ill_AB <-ill %>% filter(h15 ==1 | h15b ==1 | h37i ==1 | h37j ==1 | h37p ==1)
+
+###Table 1 Output##
+#All children, urban(=1) versus rural(=2)
+freq(dta$v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------- --------
+1    6532    32.51
+2   13561    67.49
+Total   20093   100.00
+
+#Ill children, urban(=1) versus rural(=2)
+freq(ill,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+1   3109    32.02
+2   6601    67.98
+Total   9710   100.00
+
+#Ill children who took antibiotics, , urban(=1) versus rural(=2)
+freq(ill_AB,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+1   1440    33.36
+2   2877    66.64
+Total   4317   100.00
+
+#Year survey conducted
+freq(dta,v007, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------- --------
+2014   20093   100.00
+Total   20093   100.00
+
+*--------------------------------------------------------------------------
+ANALYSES - Peru Phase 6
+--------------------------------------------------------------------------*/
+#Read dataset
+PE_dta<-read.dta("PEKR6IFL.DTA", convert.factors = FALSE)
+
+#Keep alive children only
+#Create a new variable that is truly unique per respondent by merging case id and MIDX
+PE_dta<- PE_dta %>% filter(b5==1) %>% unite("UniqueID",c(caseid,midx), remove=FALSE)
+
+#Only children with recent diarrhea and fever/cough were asked about antibiotics
+#Confirm question H15 was asked to children with diarrhea in past 2 weeks(H11 = 1 or H11 = 2)
+#Note: H15B had no responses
+check <- PE_dta %>% mutate(Diarrhea_ABuse=ifelse((h15==1),1,0))
+  %>% mutate(diarrhea=ifelse((h11==1 | h11 ==2),1,0))
+ctable(check$diarrhea,check$Diarrhea_ABuse)
+---------- ---------------- ------------- ------------- --------------- ---------------
+             Diarrhea_ABuse             0             1            <NA>           Total
+  diarrhea
+         0                      0 ( 0.0%)     0 ( 0.0%)   8191 (100.0%)   8191 (100.0%)
+         1                    958 (76.4%)   296 (23.6%)      0 (  0.0%)   1254 (100.0%)
+     Total                    958 (10.1%)   296 ( 3.1%)   8191 ( 86.7%)   9445 (100.0%)
+---------- ---------------- ------------- ------------- --------------- ---------------
+
+#Confirm country-specific antibiotic use variable H37G was only asked to children with fever (H22=1) or cough in past two weeks (H31=2)
+#Note: H37J has no responses. Based on survey instrument, H37I appears to have gauged cough syrup use, not antibiotic use
+check <- PE_dta %>% mutate(fever_cough= ifelse((h22==1 | h31 ==2),1,0))
+ctable(check$fever_cough, check$h37g)
+
+------------- ------ -------------- -------------- --------------- ---------------
+                h37g              0              1            <NA>           Total
+  fever_cough
+            0             0 ( 0.0%)      0 ( 0.0%)   5805 (100.0%)   5805 (100.0%)
+            1          2177 (59.8%)   1463 (40.2%)      0 (  0.0%)   3640 (100.0%)
+        Total          2177 (23.0%)   1463 (15.5%)   5805 ( 61.5%)   9445 (100.0%)
+------------- ------ -------------- -------------- --------------- ---------------
+
+#Proceed with analysis
+#How many children had diarrhea OR respiratory problems in past two weeks?
+ill <- PE_dta %>% filter(h11 == 1 | h11 == 2 | h22==1 | h31==2)
+
+#Of these ill children, how many took antibiotics?
+ill_AB <-ill %>% filter(h15 ==1 | h37g ==1)
+
+###Table 1 Output##
+#All children, urban(=1) versus rural(=2)
+freq(PE_dta$v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+1   5484    58.06
+2   3961    41.94
+Total   9445   100.00
+
+#Ill children, urban(=1) versus rural(=2)
+freq(ill,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+1   2409    59.12
+2   1666    40.88
+Total   4075   100.00
+
+#Ill children who took antibiotics, , urban(=1) versus rural(=2)
+freq(ill_AB,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+1   1083    65.60
+2    568    34.40
+Total   1651   100.00
+
+#Year survey conducted
+freq(PE_dta,v007, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+2012   9445   100.00
+Total   9445   100.00
+
+*--------------------------------------------------------------------------
+ANALYSES - India Phase 7
+--------------------------------------------------------------------------*/
+#Read dataset
+IA_dta<-read.dta("IAKR74FL.DTA", convert.factors = FALSE)
+
+#Keep alive children only
+#Create a new variable that is truly unique per respondent by merging case id and MIDX
+IA_dta<- IA_dta %>% filter(b5==1) %>% unite("UniqueID",c(caseid,midx), remove=FALSE)
+
+#Only children with recent diarrhea and fever/cough were asked about antibiotics
+#Confirm questions H15 and H15B was asked to children with diarrhea in past 2 weeks(H11 = 1 or H11 = 2)
+check <- IA_dta %>% mutate(Diarrhea_ABuse=ifelse((h15==1 | h15b ==1),1,0))
+  %>% mutate(diarrhea=ifelse((h11==1 | h11 ==2),1,0))
+ctable(check$diarrhea,check$Diarrhea_ABuse)
+---------- ---------------- --------------- -------------- ----------------- -----------------
+             Diarrhea_ABuse               0              1              <NA>             Total
+  diarrhea
+         0                        0 ( 0.0%)      0 ( 0.0%)   225243 (100.0%)   225243 (100.0%)
+         1                    17906 (79.6%)   4594 (20.4%)        0 (  0.0%)    22500 (100.0%)
+     Total                    17906 ( 7.2%)   4594 ( 1.9%)   225243 ( 90.9%)   247743 (100.0%)
+---------- ---------------- --------------- -------------- ----------------- -----------------
+
+#Confirm country-specific antibiotic use variable ML13N was only asked to children with fever (H22=1) or cough in past two weeks (H31=2)
+#Note: H37I and H37J have no responses
+check <- IA_dta %>% mutate(resp_ABuse=ifelse((ml13n ==1),1,0)) %>% mutate(fever_cough=ifelse((h22==1 | h31 ==2),1,0))
+ctable(check$fever_cough,check$resp_ABuse)
+------------- ------------ --------------- -------------- ----------------- -----------------
+                resp_ABuse               0              1              <NA>             Total
+  fever_cough
+            0                    0 ( 0.0%)      0 ( 0.0%)   205086 (100.0%)   205086 (100.0%)
+            1                33482 (78.5%)   9175 (21.5%)        0 (  0.0%)    42657 (100.0%)
+        Total                33482 (13.5%)   9175 ( 3.7%)   205086 ( 82.8%)   247743 (100.0%)
+------------- ------------ --------------- -------------- ----------------- -----------------
+
+#Proceed with analysis
+#How many children had diarrhea OR respiratory problems in past two weeks?
+ill <- IA_dta %>% filter(h11 == 1 | h11 == 2 | h22==1 | h31 ==2)
+
+#Of these ill children, how many took antibiotics?
+ill_AB <-ill %>% filter(h15 ==1 | h15b ==1 | ml13n ==1)
+
+###Table 1 Output##
+#All children, urban(=1) versus rural(=2)
+freq(IA_dta,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- -------- --------
+1    59222    23.90
+2   188521    76.10
+Total   247743   100.00
+
+#Ill children, urban(=1) versus rural(=2)
+freq(ill,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------- --------
+1   12969    23.82
+2   41471    76.18
+Total   54440   100.00
+
+#Ill children who took antibiotics, , urban(=1) versus rural(=2)
+freq(ill_AB,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------- --------
+1    3409    26.70
+2    9358    73.30
+Total   12767   100.00
+
+#Year survey conducted
+freq(IA_dta,v007, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- -------- --------
+2015   127723    51.55
+2016   120020    48.45
+Total   247743   100.00
+
+*--------------------------------------------------------------------------
+ANALYSES - Bangladesh Phase 6
+--------------------------------------------------------------------------*/
+#Read dataset
+BL_dta<-read.dta("BDKR61FL.DTA", convert.factors = FALSE)
+
+#Keep alive children only
+#Create a new variable that is truly unique per respondent by merging case id and MIDX
+BL_dta<- BL_dta %>% filter(b5==1) %>% unite("UniqueID",c(caseid,hidx), remove=FALSE)
+
+#Only children with fever/cough were asked about antibiotics
+#Note: Neither H15 nor H15B had responses
+#Confirm H37I and H37J were asked to children with fever (H22=1) or cough in past two weeks (H31=2)
+check <- BL_dta %>% mutate(resp_ABuse=ifelse((h37i==1 | h37j ==1),1,0))
+  %>% mutate(fever_cough=ifelse((h22==1 | h31 ==2),1,0))
+ctable(check$fever_cough,check$resp_ABuse)
+------------- ------------ -------------- -------------- --------------- ---------------
+                resp_ABuse              0              1            <NA>           Total
+  fever_cough
+            0                   0 ( 0.0%)      0 ( 0.0%)   4650 (100.0%)   4650 (100.0%)
+            1                1393 (37.7%)   2300 (62.3%)      0 (  0.0%)   3693 (100.0%)
+        Total                1393 (16.7%)   2300 (27.6%)   4650 ( 55.7%)   8343 (100.0%)
+------------- ------------ -------------- -------------- --------------- ---------------
+#Proceed with analysis
+#How many children had respiratory problems in past two weeks?
+ill <- BL_dta %>% filter(h22==1 | h31 ==2)
+
+#Of these ill children, how many took antibiotics?
+ill_AB <-ill %>% filter(h37i ==1 | h37j ==1 )
+
+###Table 1 Output##
+#All children, urban(=1) versus rural(=2)
+freq(BL_dta,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+1   2550    30.56
+2   5793    69.44
+Total   8343   100.00
+
+#Ill children, urban(=1) versus rural(=2)
+freq(ill,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+1   1110    30.06
+2   2583    69.94
+Total   3693   100.00
+
+#Ill children who took antibiotics, , urban(=1) versus rural(=2)
+freq(ill_AB,v025, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+1    686    29.83
+2   1614    70.17
+Total   2300   100.00
+
+#Year survey conducted
+freq(BL_dta,v007, cumul=FALSE, report.nas = FALSE)
+Freq        %
+----------- ------ --------
+2011   8343   100.00
+Total   8343   100.00
