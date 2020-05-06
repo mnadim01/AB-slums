@@ -1,5 +1,5 @@
 # AB-slums
-The attached file "Table1_RScript" contains a data analysis script for replication of country-level antibiotic consumption estimates presented in Table 1 of the paper: <br/> Nadimpalli, M. L. et al. Urban informal settlements as hotspots of antimicrobial resistance and the need to curb environmental transmission. Nat Microbiol, in press.
+The attached file "Table1_RScript" contains a data analysis script for replication of country-level antibiotic consumption estimates presented in Table 1 of the paper: <br/> Nadimpalli, M. L. et al. Urban informal settlements as hotspots of antimicrobial resistance and the need to curb environmental transmission. Nat Microbiol, in press, (2020).
 
 # Program
 RStudio Version 1.1.463 
